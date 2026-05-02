@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google TPUs 08 &mdash; Trillium &amp; Ironwood (v6e &amp; v7)</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root { --bg-primary:#0a0a0a; --bg-card:#0d1117; --bg-code:#161b22; --text-primary:#e6edf3; --text-secondary:#8b949e; --accent:#4285F4; --accent-dim:#4285F444; --accent-glow:#4285F433; --accent-2:#EA4335; --accent-3:#FBBC04; --accent-4:#34A853; --border:#21262d; --font-display:'Space Grotesk',sans-serif; --font-mono:'JetBrains Mono','Fira Code',monospace; --font-body:'Inter',sans-serif; --max-width:900px; }
+        *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+        html { scroll-behavior:smooth; }
+        body { background:var(--bg-primary); color:var(--text-primary); font-family:var(--font-body); font-size:17px; line-height:1.7; overflow-x:hidden; }
+        .hero { min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; padding:2rem 1.5rem; text-align:center; position:relative; }
+        .hero::before { content:''; position:absolute; top:0; left:50%; transform:translateX(-50%); width:700px; height:600px; background:radial-gradient(circle,var(--accent-glow) 0%,transparent 70%); pointer-events:none; z-index:0; }
+        .hero > * { position:relative; z-index:1; }
+        .series-label { font-family:var(--font-mono); font-size:0.85rem; color:var(--accent); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:1rem; }
+        .hero h1 { font-family:var(--font-display); font-size:clamp(2rem,5vw,3.2rem); font-weight:700; line-height:1.2; margin-bottom:1rem; }
+        .hero h1 .accent { color:var(--accent-2); }
+        .hero .subtitle { font-size:1.1rem; color:var(--text-secondary); max-width:640px; margin-bottom:2rem; }
+        .tags { display:flex; flex-wrap:wrap; gap:0.5rem; justify-content:center; margin-bottom:2.5rem; }
+        .tag { font-family:var(--font-mono); font-size:0.75rem; padding:0.25rem 0.75rem; border-radius:999px; border:1px solid var(--accent); color:var(--accent); background:var(--accent-dim); }
+        .tag.r { border-color:var(--accent-2); color:var(--accent-2); background:rgba(234,67,53,0.10); }
+        .tag.y { border-color:var(--accent-3); color:var(--accent-3); background:rgba(251,188,4,0.10); }
+        .pipeline { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:0.25rem; margin-bottom:1rem; max-width:var(--max-width); }
+        .pipeline-step { font-family:var(--font-mono); font-size:0.7rem; padding:0.3rem 0.7rem; background:var(--bg-card); border:1px solid var(--border); border-radius:4px; color:var(--text-secondary); }
+        .pipeline-arrow { color:var(--accent); font-size:0.9rem; font-weight:700; }
+        .slide { min-height:100vh; max-width:var(--max-width); margin:0 auto; padding:4rem 1.5rem; position:relative; display:flex; flex-direction:column; justify-content:center; }
+        .slide-number { font-family:var(--font-display); font-size:5rem; font-weight:700; color:var(--accent-dim); position:absolute; top:2rem; right:1.5rem; line-height:1; }
+        .slide h2 { font-family:var(--font-display); font-size:1.9rem; font-weight:700; color:var(--accent); margin-bottom:1.5rem; line-height:1.25; }
+        .slide h3 { font-family:var(--font-display); font-size:1.3rem; font-weight:600; color:var(--text-primary); margin-top:1.5rem; margin-bottom:0.75rem; }
+        .slide p { margin-bottom:1rem; color:var(--text-secondary); }
+        .slide p strong { color:var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom:1rem; padding-left:1.5rem; color:var(--text-secondary); }
+        .slide li { margin-bottom:0.4rem; }
+        .slide li strong { color:var(--text-primary); }
+        .table-wrap { overflow-x:auto; margin:1.25rem 0; border-radius:8px; border:1px solid var(--border); }
+        table { width:100%; border-collapse:collapse; font-size:0.9rem; }
+        th { background:var(--bg-code); color:var(--accent); font-weight:600; text-align:left; padding:0.75rem 1rem; border-bottom:1px solid var(--border); font-family:var(--font-display); white-space:nowrap; }
+        td { padding:0.6rem 1rem; border-bottom:1px solid var(--border); color:var(--text-secondary); vertical-align:top; }
+        tr:last-child td { border-bottom:none; }
+        tr:nth-child(even) td { background:rgba(13,17,23,0.5); }
+        .diagram-grid { display:grid; gap:0.75rem; margin:1.5rem 0; padding:1.5rem; background:var(--bg-card); border:1px solid var(--border); border-radius:8px; }
+        .diagram-grid.cols-2 { grid-template-columns:1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+        .diagram-panel { padding:1rem; background:var(--bg-code); border:1px solid var(--border); border-radius:6px; }
+        .diagram-panel.accent-border { border-left:3px solid var(--accent); }
+        .diagram-panel.r { border-left:3px solid var(--accent-2); }
+        .diagram-panel.y { border-left:3px solid var(--accent-3); }
+        .diagram-panel.g { border-left:3px solid var(--accent-4); }
+        .diagram-panel h4 { font-family:var(--font-display); font-size:1rem; color:var(--accent); margin-bottom:0.5rem; }
+        .diagram-panel.r h4 { color:var(--accent-2); }
+        .diagram-panel.y h4 { color:var(--accent-3); }
+        .diagram-panel.g h4 { color:var(--accent-4); }
+        .diagram-panel p, .diagram-panel ul { font-size:0.9rem; }
+        .callout { background:var(--bg-card); border-left:3px solid var(--accent); border-radius:0 8px 8px 0; padding:1rem 1.25rem; margin:1.25rem 0; }
+        .callout p { margin-bottom:0; }
+        .callout .callout-label { font-family:var(--font-mono); font-size:0.75rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.3rem; }
+        .canvas-wrap { background:var(--bg-card); border:1px solid var(--border); border-radius:8px; padding:1rem; margin:1.25rem 0; overflow-x:auto; }
+        .canvas-wrap canvas, .canvas-wrap svg { display:block; margin:0 auto; max-width:100%; }
+        .metric-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.5rem; margin-top:0.75rem; }
+        .metric { background:var(--bg-code); border:1px solid var(--border); border-radius:6px; padding:0.6rem 0.8rem; text-align:center; }
+        .metric .metric-label { font-family:var(--font-mono); font-size:0.7rem; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.08em; }
+        .metric .metric-value { font-family:var(--font-display); font-size:1.25rem; color:var(--accent); font-weight:600; margin-top:0.2rem; }
+        .contents-list { list-style:none; padding-left:0; counter-reset:contents; }
+        .contents-list li { counter-increment:contents; padding:0.6rem 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:1rem; }
+        .contents-list li:last-child { border-bottom:none; }
+        .contents-list li::before { content:counter(contents,decimal-leading-zero); font-family:var(--font-mono); font-size:0.85rem; color:var(--accent); min-width:2rem; }
+        .contents-list a { color:var(--text-primary); text-decoration:none; }
+        .contents-list a:hover { color:var(--accent); }
+        .footer { text-align:center; padding:3rem 1.5rem; color:var(--text-secondary); font-size:0.85rem; border-top:1px solid var(--border); max-width:var(--max-width); margin:0 auto; }
+        .footer a { color:var(--accent); text-decoration:none; }
+        @media (max-width:640px) { .slide { padding:3rem 1rem; min-height:auto; } .slide-number { font-size:3rem; top:1.5rem; right:1rem; } .slide h2 { font-size:1.5rem; } .diagram-grid.cols-2,.diagram-grid.cols-3 { grid-template-columns:1fr; } .hero h1 { font-size:1.8rem; } table { font-size:0.78rem; } }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="series-label">Google TPUs Series &mdash; Presentation 08</div>
+    <h1>Trillium &amp; <span class="accent">Ironwood</span> &mdash; v6e &amp; v7</h1>
+    <p class="subtitle">2024&ndash;2025: Trillium quadruples e-class compute. Ironwood (TPU v7) is Google's first chip "for the age of inference" &mdash; 4.6 PFLOPS FP8, 192 GiB HBM3e, 9,216-chip pods.</p>
+    <div class="tags">
+        <span class="tag">Trillium (v6e)</span><span class="tag">May 2024</span>
+        <span class="tag r">Ironwood (v7)</span><span class="tag r">Apr 2025</span>
+        <span class="tag y">FP8</span><span class="tag">HBM3e</span>
+        <span class="tag">SparseCore G3</span><span class="tag">Gemini 2.x / 3</span>
+    </div>
+    <div class="pipeline">
+        <span class="pipeline-step">v5e / v5p</span><span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Trillium 4.7×</span><span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">Ironwood +FP8</span><span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">192 GiB HBM3e</span><span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">9,216-chip pod</span><span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">42.5 ExaFLOPS</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Trillium &mdash; The 4.7&times; Jump</a></li>
+        <li><a href="#slide-02">SparseCore Generation 3</a></li>
+        <li><a href="#slide-03">Trillium's 256-Chip Pod &amp; Multipod Scaling</a></li>
+        <li><a href="#slide-04">Why No "v6p"?</a></li>
+        <li><a href="#slide-05">Ironwood &mdash; The Inference Flagship</a></li>
+        <li><a href="#slide-06">Per-Chip Numbers In Context</a></li>
+        <li><a href="#slide-07">192 GiB HBM3e &mdash; Why It Matters</a></li>
+        <li><a href="#slide-08">FP8 Becomes the Headline Numeric</a></li>
+        <li><a href="#slide-09">The 9,216-Chip Pod</a></li>
+        <li><a href="#slide-10">Workloads &mdash; Gemini 2.0 / 2.5</a></li>
+        <li><a href="#slide-11">The Inference-First Design Philosophy</a></li>
+        <li><a href="#slide-12">Cheat Sheet</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Trillium &mdash; The 4.7&times; Jump</h2>
+    <p>Announced at Google I/O on 14 May 2024 as the "6th-generation TPU"; rebranded with the public name <strong>Trillium</strong> (the woodland flower). General availability landed on 11 December 2024.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Per-chip vs v5e</h4>
+            <ul>
+                <li><strong>918 TFLOPS bf16</strong> (4.66&times; v5e's 197 TFLOPS) &mdash; the "4.7&times;" headline.</li>
+                <li><strong>1,836 TOPS INT8</strong>.</li>
+                <li><strong>32 GiB HBM at 1,640 GB/s</strong> &mdash; exactly 2&times; v5e in capacity and bandwidth.</li>
+                <li><strong>800 GB/s ICI bidirectional</strong> &mdash; 2&times; v5e ICI.</li>
+                <li>Same 1-TensorCore architecture as v5e (e-class).</li>
+            </ul>
+        </div>
+        <div class="diagram-panel y">
+            <h4>What got bigger to make it 4.7&times;</h4>
+            <ul>
+                <li>Process node shrink (Google has not officially said; widely reported as a TSMC 5/4nm-class step from v5e's node).</li>
+                <li>Larger MXU array per TensorCore.</li>
+                <li>Higher clock at lower voltage.</li>
+                <li>Deeper VMEM hierarchy with more software-managed buffer.</li>
+                <li>3rd-generation SparseCore (more on the next slide).</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">A 4.7&times; "tick" is unusually large</div>
+        <p>For comparison: NVIDIA's H100 to B200 was around 2.5&times; on the equivalent numeric. Trillium's 4.7&times; comes partly from Google having held v5e architecture longer than originally planned (v5e shipped Aug 2023; ~21 months to GA-Trillium) and partly from the e-class line being the easier place to spend transistor budget on raw compute &mdash; you don't have to also pay for an OCS-attachable 3D-torus subsystem.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>SparseCore Generation 3</h2>
+    <p>Trillium's 3rd-generation SparseCore is roughly <strong>2&times; the embedding throughput</strong> of the v5p SparseCore, and per Google's GA blog delivers <strong>5&times; on DLRM-DCNv2</strong> &mdash; a recommendation-system benchmark.</p>
+
+    <h3>What changed in SparseCore G3</h3>
+    <ul>
+        <li>Wider gather lanes &mdash; more concurrent embedding lookups in flight.</li>
+        <li>Hardware support for <strong>two-sided embedding lookups</strong> (e.g. user-item interaction features, common in modern recommenders).</li>
+        <li>Better handling of variable-length lookup sequences &mdash; relevant for <strong>MoE routing</strong>, where each token picks <em>k</em> of <em>N</em> experts and the per-token <em>k</em> can vary.</li>
+        <li>Reduced power per lookup (no specific number disclosed).</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Why MoE makes SparseCore load-bearing</div>
+        <p>MoE inference looks structurally identical to recommendation embedding lookup: each token selects a small subset of expert weight blocks and gathers them from HBM. SparseCore's hardware path is precisely what that needs. As MoE has become the dominant frontier-model architecture (Mixtral, GPT-4-class, Gemini 2.x), SparseCore has moved from "useful for ranking" to "load-bearing for LLMs". <strong>You cannot serve a sparse MoE efficiently without something like a SparseCore.</strong></p>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Trillium's 256-Chip Pod &amp; Multipod Scaling</h2>
+    <p>Like v5e, Trillium ships a <strong>256-chip 2D-torus pod</strong> &mdash; the canonical e-class shape. The big change is the <em>multipod</em> story: Google explicitly markets Trillium pods as composable into a 100,000-chip Jupiter-network domain.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>In-pod (ICI)</h4>
+            <ul>
+                <li>256 chips, 16&times;16 2D torus.</li>
+                <li>800 GB/s ICI bidirectional per chip.</li>
+                <li>Pod aggregate: ~235 PFLOPS bf16, 8 TiB HBM.</li>
+                <li>2&times; v5e on every per-pod metric.</li>
+            </ul>
+        </div>
+        <div class="diagram-panel y">
+            <h4>Multi-pod (Jupiter DCN)</h4>
+            <ul>
+                <li><strong>Up to ~100,000 Trillium chips in one optical-network domain</strong>.</li>
+                <li><strong>13 Pb/s</strong> bisection bandwidth (vendor figure).</li>
+                <li>99% scaling efficiency at 12-pod (3,072 chips) on Google's published benchmarks.</li>
+                <li>94% scaling efficiency at 24-pod (6,144 chips).</li>
+                <li>Used to <strong>train Gemini 2.0</strong>.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>Why 100,000 chips on e-class, when v5p has 8,960 in one pod?</h3>
+    <p>An ICI-coherent pod and a multipod cluster are <em>different things</em>. ICI is sub-microsecond, custom SerDes, hardware all-reduce. Multipod over Jupiter is microseconds-to-milliseconds, optical-circuit-switched, with all-reduce in software. <strong>You can train at much larger scale on the multipod, but the collective patterns are coarser-grained.</strong> v5p's 8,960-chip ICI domain is for fine-grained tensor-parallel training; Trillium's 100k-chip multipod is for data-parallel and pipeline-parallel scaling.</p>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Why No "v6p"?</h2>
+    <p>This is a question that confused everyone in 2024. v5 had two SKUs (e and p); v6 only has Trillium / v6e. There is no v6p. The next p-class chip is Ironwood / v7.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel y">
+            <h4>The product-cadence answer</h4>
+            <p>p-class TPUs sit in datacenters for years; v5p deployed in late 2023 will still be doing useful work in 2027. Refreshing it every 18 months is wasteful capex. The cadence on p-class is closer to ~24&ndash;30 months.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>The technology answer</h4>
+            <p>HBM3e wasn't ready in volume in 2024. The 192 GiB / 7.4 TB/s per-chip memory profile that Ironwood (2025) actually ships requires HBM3e. Putting v6p out in 2024 would have meant another HBM2e chip with marginal capacity gain.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>The strategic answer</h4>
+            <p>Google's Gemini training was already saturating v5p pods in mid-2024 with very high utilisation. The right next p-class chip is one with a major capacity and FP8 jump &mdash; not a 1.5&times; refresh.</p>
+        </div>
+    </div>
+
+    <p>The result is a deliberate cadence: e-class refreshes more often (v5e &rarr; Trillium &rarr; eventually v8e), p-class refreshes less often (v5p &rarr; Ironwood &rarr; eventually v8p). This pattern will probably continue. Treat "Trillium = v6e" and "Ironwood = v7p" as the start of two interleaved series.</p>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Ironwood &mdash; The Inference Flagship</h2>
+    <p>Announced at Google Cloud Next on 9 April 2025, with general availability following in November 2025. Internally <strong>TPU v7 / TPU7x</strong>; publicly named <strong>Ironwood</strong>. Marketed as Google's "first TPU built for the age of inference".</p>
+
+    <div class="metric-grid">
+        <div class="metric"><div class="metric-label">FP8 peak / chip</div><div class="metric-value">4.6 PFLOPS</div></div>
+        <div class="metric"><div class="metric-label">bf16 / chip</div><div class="metric-value">2.31 PFLOPS</div></div>
+        <div class="metric"><div class="metric-label">HBM / chip</div><div class="metric-value">192 GiB</div></div>
+        <div class="metric"><div class="metric-label">HBM BW / chip</div><div class="metric-value">7.37 TB/s</div></div>
+        <div class="metric"><div class="metric-label">ICI / chip (bidir)</div><div class="metric-value">1.2 TB/s</div></div>
+        <div class="metric"><div class="metric-label">Max pod chips</div><div class="metric-value">9,216</div></div>
+        <div class="metric"><div class="metric-label">Pod FP8</div><div class="metric-value">42.5 EFLOPS</div></div>
+        <div class="metric"><div class="metric-label">Per-chip TDP</div><div class="metric-value">~600 W</div></div>
+    </div>
+
+    <h3>Headline framings (from Google's announcement)</h3>
+    <ul>
+        <li>"5&times; Trillium" on FP8 (4,614 / 918 TFLOPS).</li>
+        <li>"6&times; Trillium" on HBM capacity (192 / 32 GiB).</li>
+        <li>"4.5&times; Trillium" on HBM bandwidth (7,370 / 1,640 GB/s).</li>
+        <li>"30&times; v2" on perf-per-watt (back-to-back generations of efficiency improvements compounding).</li>
+        <li>"2&times; Trillium" on perf-per-watt.</li>
+    </ul>
+
+    <p>Important caveat: many of these headlines compare FP8 against Trillium's bf16, which is an unfair 2&times; numeric advantage built in. The honest comparison is bf16-to-bf16: <strong>Ironwood is ~2.5&times; Trillium on bf16</strong>. The 5&times; comes from the FP8 + capacity + bandwidth combination, which is genuinely transformative for inference.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Per-Chip Numbers In Context</h2>
+    <p>Where Ironwood sits relative to NVIDIA's contemporary inference / training silicon (May 2026):</p>
+
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Chip</th><th>Year</th><th>Headline numeric</th><th>HBM</th><th>HBM BW</th><th>TDP</th></tr></thead>
+            <tbody>
+                <tr><td><strong>TPU v5p</strong></td><td>Dec 2023</td><td>459 TFLOPS bf16</td><td>95 GiB</td><td>2.76 TB/s</td><td>?</td></tr>
+                <tr><td>NVIDIA H100 SXM</td><td>2022</td><td>989 TFLOPS bf16 dense / 3,958 TFLOPS FP8</td><td>80 GiB</td><td>3.35 TB/s</td><td>700 W</td></tr>
+                <tr><td>NVIDIA H200</td><td>2024</td><td>989 TFLOPS bf16 / 3,958 FP8</td><td>141 GiB</td><td>4.8 TB/s</td><td>700 W</td></tr>
+                <tr><td><strong>Trillium (v6e)</strong></td><td>Dec 2024</td><td>918 TFLOPS bf16</td><td>32 GiB</td><td>1.64 TB/s</td><td>~280 W</td></tr>
+                <tr><td>NVIDIA B200</td><td>2024 (dual-die)</td><td>2.25 PFLOPS bf16 / 9 PFLOPS FP4</td><td>192 GiB</td><td>8 TB/s</td><td>1000 W</td></tr>
+                <tr><td><strong>Ironwood (v7)</strong></td><td>Apr 2025</td><td>2.31 PFLOPS bf16 / 4.6 PFLOPS FP8</td><td>192 GiB</td><td>7.37 TB/s</td><td>~600 W</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <h3>Reading the table</h3>
+    <ul>
+        <li>Per-chip bf16: Ironwood (2.31 PFLOPS) vs B200 dual-die (2.25 PFLOPS) &mdash; <strong>Ironwood is competitive on bf16 at the chip level</strong>.</li>
+        <li>FP8: B200 has FP8 too (~4.5 PFLOPS dense); both are in the same ballpark. NVIDIA also has FP4 on B200 doubling the headline.</li>
+        <li>HBM capacity: tied at 192 GiB.</li>
+        <li>HBM bandwidth: B200 wins (8 TB/s vs 7.37 TB/s) by ~10%.</li>
+        <li>TDP: Ironwood is ~40% lower (600 W vs 1000 W). Better perf-per-watt is a real Ironwood win.</li>
+        <li><strong>Pod scale: Ironwood 9,216 chips in one ICI domain; NVIDIA NVL72 = 72 GPUs.</strong> Two orders of magnitude on scale-up size.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>192 GiB HBM3e &mdash; Why It Matters</h2>
+    <p>Memory capacity is the binding constraint for modern inference. Ironwood's 192 GiB per chip is the single most important spec on the chip.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>What fits on one chip</h4>
+            <ul>
+                <li><strong>70B model in bf16</strong> (140 GB) + 50 GB of KV cache &rarr; comfortable fit.</li>
+                <li><strong>180B model in FP8</strong> (180 GB) + 12 GB of KV cache &rarr; fits.</li>
+                <li><strong>~700B-parameter MoE</strong> (FP8, 8 active experts of 2 each) with experts sharded by topology &rarr; one 4-chip tile.</li>
+                <li><strong>Long-context Gemini 2.5 with 2M-token KV cache</strong> at FP8 quantisation &rarr; one chip.</li>
+            </ul>
+        </div>
+        <div class="diagram-panel y">
+            <h4>The bandwidth side</h4>
+            <ul>
+                <li>7.37 TB/s HBM is enough to stream 70B in bf16 in &lt;20 ms &mdash; faster than any meaningful per-token deadline.</li>
+                <li>Effective bandwidth scales with CMEM hit rate; KV cache hits go to ~2&times; effective.</li>
+                <li>For decode-bound workloads (chatbot inference), bandwidth matters more than peak FLOPS, and 7.4 TB/s is in the same league as B200.</li>
+            </ul>
+        </div>
+    </div>
+
+    <h3>HBM3e details</h3>
+    <p>HBM3e is the JEDEC standard finalised in early 2024. Key parameters:</p>
+    <ul>
+        <li>Up to 12-Hi stacks (12 vertically-stacked memory dies per stack).</li>
+        <li>Per-stack capacity up to 36 GiB at 12-Hi.</li>
+        <li>Per-stack bandwidth up to ~1.2 TB/s.</li>
+        <li>Ironwood at 192 GiB / 7.37 TB/s per chip likely uses 6 stacks at 32 GiB / ~1.23 TB/s each &mdash; or 8 stacks at 24 GiB.</li>
+    </ul>
+
+    <p>Either way, the package design at this HBM scale is extremely difficult &mdash; CoWoS-style 2.5D advanced packaging, careful thermal management, and per-stack ECC. This is the kind of system engineering Google has been quietly accumulating since v3.</p>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>FP8 Becomes the Headline Numeric</h2>
+    <p>Ironwood is the first TPU to lead with FP8 as its headline numeric. v4 / v5 / Trillium all advertised primarily in bf16. The shift mirrors NVIDIA's H100 (Hopper, 2022) and B200 (Blackwell, 2024).</p>
+
+    <h3>Why FP8 at this generation, not earlier?</h3>
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel y">
+            <h4>1. Numerical maturity</h4>
+            <p>FP8 wasn't a stable training format until ~2023 &mdash; required loss-scaling, careful range tracking, and per-tensor scale factors. By 2025 the techniques were proven.</p>
+        </div>
+        <div class="diagram-panel accent-border">
+            <h4>2. Inference-first chip</h4>
+            <p>FP8 inference quantisation has been mainstream since 2023. Ironwood is the first TPU explicitly designed for this case &mdash; a chip whose primary metric is "tokens/sec on a frontier model in production".</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>3. The doubling lever</h4>
+            <p>Halving precision doubles FLOPS-per-MAC. Going from bf16 to FP8 is the cleanest possible 2&times; on peak performance with a known acceptable accuracy cost &mdash; cleaner than die-area or clock increases at this point in the curve.</p>
+        </div>
+    </div>
+
+    <p>Ironwood's FP8 path uses the standard OCP FP8 formats (E4M3 for activations, E5M2 for gradients on the rare occasions training uses them) with per-block scaling. The bf16 path is preserved for cases where FP8 is too aggressive.</p>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>The 9,216-Chip Pod</h2>
+    <p>Ironwood pods come in two sizes: 256 chips (smaller deployments) and <strong>9,216 chips</strong> (max). The 9,216-chip pod is the largest single ICI-coherent compute domain ever built.</p>
+
+    <div class="canvas-wrap">
+        <svg viewBox="0 0 700 220" width="700" height="220" xmlns="http://www.w3.org/2000/svg">
+            <style>
+                .pod { fill:rgba(234,67,53,0.15); stroke:#EA4335; stroke-width:2; }
+                .ocs { fill:rgba(66,133,244,0.18); stroke:#4285F4; }
+                .lbl { fill:#e6edf3; font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:13px; text-anchor:middle; }
+                .sublbl { fill:#8b949e; font-family:'JetBrains Mono',monospace; font-size:10px; text-anchor:middle; }
+            </style>
+            <rect class="pod" x="40" y="40" width="620" height="100" rx="6"/>
+            <text class="lbl" x="350" y="65">Ironwood Pod (max)</text>
+            <text class="sublbl" x="350" y="85">9,216 chips · 3D torus + Palomar-class OCS</text>
+            <text class="sublbl" x="350" y="100">~1.77 PiB HBM3e · ~67 PB/s aggregate HBM bandwidth</text>
+            <text class="sublbl" x="350" y="115">~42.5 ExaFLOPS FP8 peak</text>
+            <text class="sublbl" x="350" y="130">~5.5 MW pod power · liquid-cooled</text>
+            <rect class="ocs" x="120" y="160" width="460" height="35" rx="6"/>
+            <text class="sublbl" x="350" y="183">OCS layer · per-job topology reconfiguration</text>
+        </svg>
+    </div>
+
+    <h3>What you can fit in one pod</h3>
+    <ul>
+        <li>A <strong>10T-parameter dense model in FP8</strong> (10 TB) takes 0.6% of pod HBM &mdash; pod-scale frontier training is bound by compute, not memory.</li>
+        <li>A 100B-parameter MoE with KV cache for tens of thousands of concurrent users at 1M-token contexts &mdash; full multi-tenant inference deployment in one pod.</li>
+        <li>For Gemini-class training: 9,216 chips at 4.6 PFLOPS FP8 each gives a sustained throughput well past 10 ExaFLOPS &mdash; the whole pod can churn through a 10T-token training run in days, not weeks.</li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Workloads &mdash; Gemini 2.0 / 2.5</h2>
+    <div class="table-wrap">
+        <table>
+            <thead><tr><th>Model</th><th>Year</th><th>Hardware</th><th>Notes</th></tr></thead>
+            <tbody>
+                <tr><td>Gemini 2.0</td><td>Dec 2024</td><td>Trillium (v6e), multipod</td><td>Trained on Trillium &mdash; Google's GA blog explicit on this. The first frontier training run on the 100k-chip Jupiter multipod.</td></tr>
+                <tr><td>Gemini 2.5 Pro</td><td>Mar 2025</td><td>Trillium training; Ironwood inference</td><td>Trained when Ironwood was still pre-GA; inference moved to Ironwood for the long-context (2M token) variants.</td></tr>
+                <tr><td>Gemini 2.5 Flash</td><td>2025</td><td>v5e &amp; Trillium for inference</td><td>Distilled, smaller, runs comfortably on the e-class fleet.</td></tr>
+                <tr><td>Gemini 3 (rumoured)</td><td>2025&ndash;26</td><td>Ironwood</td><td>Trade-press indications; Google hasn't confirmed details. The 9,216-chip pod and 192 GiB HBM are sized for this generation.</td></tr>
+                <tr><td>YouTube / Search ranking</td><td>2024&ndash;26</td><td>Trillium fleet</td><td>SparseCore G3 shines here; 5&times; DLRM-DCNv2 throughput translates directly.</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">The "age of inference" pitch, decoded</div>
+        <p>Google's Ironwood marketing leans on "age of inference" because, by 2025, inference-cost-at-scale is the binding constraint for monetising AI. A frontier training run is now O(100M$); ongoing inference for a popular consumer product is O(1B$/year). Ironwood's design centre &mdash; high HBM, low TDP, FP8 throughput, big pod &mdash; is shaped by that economic shift, not by training requirements.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-11">
+    <div class="slide-number">11</div>
+    <h2>The Inference-First Design Philosophy</h2>
+    <p>What does "designed for inference" actually mean architecturally? Five concrete things in Ironwood:</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Memory-led, not compute-led</h4>
+            <p>Ironwood's chip-area budget went to HBM3e I/O, more on-die SRAM, and a wider interconnect &mdash; not to a 4&times; larger MXU. Inference is bandwidth-bound; throwing more MACs at a chip you can't feed is wasted silicon.</p>
+        </div>
+        <div class="diagram-panel y">
+            <h4>FP8 native</h4>
+            <p>FP8 is the production inference numeric for everyone in 2025. v5p had bf16 + INT8; Ironwood adds FP8 as a first-class path through the MXU, which was a non-trivial silicon change.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Lower TDP, higher density</h4>
+            <p>~600 W vs B200's 1000 W. For a fleet running 24/7, 40% lower power per chip translates to ~30% lower datacenter cost per token. Ironwood is more "perf/W" than "peak perf".</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>SparseCore for MoE routing</h4>
+            <p>3rd-gen+ SparseCore handles MoE expert lookup. Inference of an MoE model is dominated by the routing-then-gather step; Ironwood does it in dedicated silicon.</p>
+        </div>
+    </div>
+
+    <h3>Why "first" inference TPU is contested</h3>
+    <p>v4i (2021) was inference-tuned. v5e (2023) was cost-optimised for inference. The marketing claim "first TPU built for the age of inference" is best read as "first <em>flagship-scale</em> TPU built primarily for inference" &mdash; Ironwood is the first inference-first chip that is also bigger than its training-first sibling. v5p and Ironwood are both 8,960- and 9,216-chip pods; the pod size suggests the inference-vs-training distinction is now mostly numeric (FP8 vs bf16) and capacity (192 GiB vs 95 GiB).</p>
+</section>
+
+<section class="slide" id="slide-12">
+    <div class="slide-number">12</div>
+    <h2>Cheat Sheet</h2>
+    <ul>
+        <li><strong>Trillium (v6e, May 2024 / GA Dec 2024):</strong> 918 TFLOPS bf16 (4.7&times; v5e), 32 GiB HBM at 1.64 TB/s, 800 GB/s ICI, 256-chip 2D-torus pod. 3rd-gen SparseCore. Trained Gemini 2.0.</li>
+        <li><strong>No v6p:</strong> Google skipped a p-class chip in the v6 generation; the next p-class is Ironwood / v7.</li>
+        <li><strong>Ironwood (v7 / TPU7x, Apr 2025 / GA Nov 2025):</strong> 4.6 PFLOPS FP8, 2.31 PFLOPS bf16, 192 GiB HBM3e at 7.37 TB/s, 1.2 TB/s ICI, 9,216-chip 3D-torus + OCS pod. ~600 W per chip. JAX-only.</li>
+        <li><strong>Ironwood pod aggregate:</strong> 42.5 ExaFLOPS FP8, ~1.77 PiB HBM3e, ~67 PB/s aggregate HBM. Largest single ICI-coherent compute domain in production.</li>
+        <li><strong>FP8 native</strong> on Ironwood &mdash; OCP E4M3 / E5M2 formats, per-block scaling.</li>
+        <li><strong>192 GiB HBM</strong> matches NVIDIA B200 capacity at the chip level. Lets one chip hold a 70B model + 50 GB KV cache, or one 180B FP8 model.</li>
+        <li>Gemini 2.0 trained on Trillium multipod; Gemini 2.5 inference on Ironwood; Gemini 3 expected on Ironwood.</li>
+        <li>The "age of inference" framing is honest: by 2025 inference-cost-at-fleet-scale is the dominant economic problem, and Ironwood is shaped to solve it rather than to set training records.</li>
+    </ul>
+
+    <div class="callout">
+        <div class="callout-label">Read next</div>
+        <p>Deck <strong>09 &mdash; Memory &amp; Numerics</strong> goes deeper on HBM evolution, VMEM/CMEM, and the bf16 / INT8 / FP8 numeric story. Deck <strong>10 &mdash; ICI &amp; OCS</strong> explains how Ironwood's 9,216-chip pod is wired up.</p>
+    </div>
+</section>
+
+<footer class="footer">
+    <p>Part of the <a href="https://github.com/BrendanJamesLynskey/LLM_Hub_Google_TPUs">Google TPUs</a> series. Sources: Trillium launch &amp; GA blogs (cloud.google.com/blog); Cloud TPU v6e docs (cloud.google.com/tpu/docs/v6e); Ironwood announcement (blog.google) and GA blog; Cloud TPU tpu7x docs (cloud.google.com/tpu/docs/tpu7x); SemiAnalysis "TPUv7: Google takes a swing at the king" (Nov 2025).</p>
+</footer>
+
+</body>
+</html>
