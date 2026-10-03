@@ -260,8 +260,8 @@
             <thead><tr><th>Chip</th><th>Year</th><th>Headline numeric</th><th>HBM</th><th>HBM BW</th><th>TDP</th></tr></thead>
             <tbody>
                 <tr><td><strong>TPU v5p</strong></td><td>Dec 2023</td><td>459 TFLOPS bf16</td><td>95 GiB</td><td>2.76 TB/s</td><td>?</td></tr>
-                <tr><td>NVIDIA H100 SXM</td><td>2022</td><td>989 TFLOPS bf16 dense / 3,958 TFLOPS FP8</td><td>80 GiB</td><td>3.35 TB/s</td><td>700 W</td></tr>
-                <tr><td>NVIDIA H200</td><td>2024</td><td>989 TFLOPS bf16 / 3,958 FP8</td><td>141 GiB</td><td>4.8 TB/s</td><td>700 W</td></tr>
+                <tr><td>NVIDIA H100 SXM</td><td>2022</td><td>989 TFLOPS bf16 / 1,979 TFLOPS FP8 (dense)</td><td>80 GiB</td><td>3.35 TB/s</td><td>700 W</td></tr>
+                <tr><td>NVIDIA H200</td><td>2024</td><td>989 TFLOPS bf16 / 1,979 FP8 (dense)</td><td>141 GiB</td><td>4.8 TB/s</td><td>700 W</td></tr>
                 <tr><td><strong>Trillium (v6e)</strong></td><td>Dec 2024</td><td>918 TFLOPS bf16</td><td>32 GiB</td><td>1.64 TB/s</td><td>~280 W</td></tr>
                 <tr><td>NVIDIA B200</td><td>2024 (dual-die)</td><td>2.25 PFLOPS bf16 / 9 PFLOPS FP4</td><td>192 GiB</td><td>8 TB/s</td><td>1000 W</td></tr>
                 <tr><td><strong>Ironwood (v7)</strong></td><td>Apr 2025</td><td>2.31 PFLOPS bf16 / 4.6 PFLOPS FP8</td><td>192 GiB</td><td>7.37 TB/s</td><td>~600 W</td></tr>
@@ -357,7 +357,7 @@
             <rect class="pod" x="40" y="40" width="620" height="100" rx="6"/>
             <text class="lbl" x="350" y="65">Ironwood Pod (max)</text>
             <text class="sublbl" x="350" y="85">9,216 chips · 3D torus + Palomar-class OCS</text>
-            <text class="sublbl" x="350" y="100">~1.77 PiB HBM3e · ~67 PB/s aggregate HBM bandwidth</text>
+            <text class="sublbl" x="350" y="100">~1.69 PiB HBM3e · ~67 PB/s aggregate HBM bandwidth</text>
             <text class="sublbl" x="350" y="115">~42.5 ExaFLOPS FP8 peak</text>
             <text class="sublbl" x="350" y="130">~5.5 MW pod power · liquid-cooled</text>
             <rect class="ocs" x="120" y="160" width="460" height="35" rx="6"/>
@@ -430,7 +430,7 @@
         <li><strong>Trillium (v6e, May 2024 / GA Dec 2024):</strong> 918 TFLOPS bf16 (4.7&times; v5e), 32 GiB HBM at 1.64 TB/s, 800 GB/s ICI, 256-chip 2D-torus pod. 3rd-gen SparseCore. Trained Gemini 2.0.</li>
         <li><strong>No v6p:</strong> Google skipped a p-class chip in the v6 generation; the next p-class is Ironwood / v7.</li>
         <li><strong>Ironwood (v7 / TPU7x, Apr 2025 / GA Nov 2025):</strong> 4.6 PFLOPS FP8, 2.31 PFLOPS bf16, 192 GiB HBM3e at 7.37 TB/s, 1.2 TB/s ICI, 9,216-chip 3D-torus + OCS pod. ~600 W per chip. JAX-only.</li>
-        <li><strong>Ironwood pod aggregate:</strong> 42.5 ExaFLOPS FP8, ~1.77 PiB HBM3e, ~67 PB/s aggregate HBM. Largest single ICI-coherent compute domain in production.</li>
+        <li><strong>Ironwood pod aggregate:</strong> 42.5 ExaFLOPS FP8, ~1.69 PiB HBM3e, ~67 PB/s aggregate HBM. Largest single ICI-coherent compute domain in production.</li>
         <li><strong>FP8 native</strong> on Ironwood &mdash; OCP E4M3 / E5M2 formats, per-block scaling.</li>
         <li><strong>192 GiB HBM</strong> matches NVIDIA B200 capacity at the chip level. Lets one chip hold a 70B model + 50 GB KV cache, or one 180B FP8 model.</li>
         <li>Gemini 2.0 trained on Trillium multipod; Gemini 2.5 inference on Ironwood; Gemini 3 expected on Ironwood.</li>
